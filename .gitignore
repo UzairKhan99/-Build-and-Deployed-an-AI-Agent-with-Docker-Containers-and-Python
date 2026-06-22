@@ -1,4 +1,8 @@
 .env
+.env.*
+!.env.example
+
+.railway/
 
 __pycache__/
 *.py[cod]
