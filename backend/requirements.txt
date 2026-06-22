@@ -1,0 +1,12 @@
+fastapi[standard]
+uvicorn[standard]
+python-dotenv
+pydantic-settings
+langchain
+langchain-openai
+langgraph
+sqlalchemy
+sqlmodel
+psycopg[binary]
+requests
+httpx
