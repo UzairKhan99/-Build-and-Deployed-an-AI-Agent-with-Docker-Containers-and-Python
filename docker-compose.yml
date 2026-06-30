@@ -1,10 +1,14 @@
 services:
+  # FastAPI application
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: ai-agent-backend
     env_file:
       - .env
     ports:
+      # Your computer's port 8000 -> container port 8000
       - "${BACKEND_BIND:-127.0.0.1}:${BACKEND_PORT:-8000}:8000"
     volumes:
       - ./backend/src:/app
@@ -18,6 +22,7 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # MySQL database
   db:
     image: mysql:8.0
     container_name: ai_agent_mysql
@@ -27,6 +32,7 @@ services:
       MYSQL_PASSWORD: ai_password
       MYSQL_ROOT_PASSWORD: rootpassword
     ports:
+      # Connect from your PC on port 3307; MySQL uses 3306 inside Docker.
       - "127.0.0.1:3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
