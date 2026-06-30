@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from sqlmodel import SQLModel, Session, create_engine
 
-import models
+import chat.models as models
 
 
 load_dotenv()

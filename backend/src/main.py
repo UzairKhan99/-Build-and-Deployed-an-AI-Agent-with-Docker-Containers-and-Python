@@ -6,14 +6,12 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, text
 
 from database import get_session, init_db
-from models import AgentRun
-
+from chat.routing import router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
     yield
-
 
 app = FastAPI(
     title=" AI Agent API",
@@ -22,16 +20,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-
-class AgentRequest(BaseModel):
-    message: str = Field(..., min_length=1)
+app.include_router(router, prefix="/api/chats")
 
 
-class AgentResponse(BaseModel):
-    id: int
-    status: str
-    message: str
-    input: str
 
 
 @app.get("/")
@@ -47,40 +38,3 @@ def health(session: Session = Depends(get_session)):
 
     except SQLAlchemyError:
         raise HTTPException(status_code=503, detail="Database is unreachable")
-
-
-@app.get("/db-test")
-def db_test(session: Session = Depends(get_session)):
-    try:
-        result = session.exec(text("SELECT DATABASE()")).first()
-        return {"connected_database": result[0]}
-
-    except SQLAlchemyError:
-        raise HTTPException(status_code=503, detail="Database connection failed")
-
-
-@app.post("/agent/run", response_model=AgentResponse)
-def run_agent(request: AgentRequest, session: Session = Depends(get_session)):
-    response_message = "Agent request saved successfully. AI logic will be added later."
-
-    agent_run = AgentRun(
-        message=request.message,
-        response=response_message,
-        status="success",
-    )
-
-    try:
-        session.add(agent_run)
-        session.commit()
-        session.refresh(agent_run)
-
-    except SQLAlchemyError:
-        session.rollback()
-        raise HTTPException(status_code=503, detail="Could not save the agent run")
-
-    return AgentResponse(
-        id=agent_run.id,
-        status=agent_run.status,
-        message=response_message,
-        input=agent_run.message,
-    )
