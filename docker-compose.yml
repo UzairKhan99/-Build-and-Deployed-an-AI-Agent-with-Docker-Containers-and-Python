@@ -1,18 +1,13 @@
 services:
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    build: ./backend
     container_name: ai-agent-backend
     env_file:
       - .env
     ports:
       - "${BACKEND_BIND:-127.0.0.1}:${BACKEND_PORT:-8000}:8000"
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:?Set POSTGRES_USER in .env}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db:5432/${POSTGRES_DB:?Set POSTGRES_DB in .env}
     volumes:
-      - ./backend/src:/app/src
-    command: uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
+      - ./backend/src:/app
     depends_on:
       db:
         condition: service_healthy
@@ -24,20 +19,24 @@ services:
     restart: unless-stopped
 
   db:
-    image: postgres:16-alpine
-    container_name: ai-agent-db
+    image: mysql:8.0
+    container_name: ai_agent_mysql
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB in .env}
-      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      MYSQL_DATABASE: ai_agent_db
+      MYSQL_USER: ai_user
+      MYSQL_PASSWORD: ai_password
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "127.0.0.1:3307:3306"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?Set POSTGRES_USER in .env} -d ${POSTGRES_DB:?Set POSTGRES_DB in .env}"]
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
+      start_period: 20s
     restart: unless-stopped
 
 volumes:
-  postgres_data:
+  mysql_data:
